@@ -3,6 +3,10 @@ name: Build Release APK
 on:
   workflow_dispatch:
 
+# 1. YE LINE BOHOT ZAROORI HAI - Ye server ki RAM limit badhati hai taaki OutOfMemoryError na aaye
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx5g -Dorg.gradle.daemon=false"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,21 +26,20 @@ jobs:
 
     - uses: gradle/actions/setup-gradle@v3
 
-    # NAYA STEP: Ye step pehle ek dummy/fake key banayega server par
     - name: Generate Fake Keystore
       run: |
         mkdir -p ~/.android
         keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Android Debug"
 
-    # BUILD STEP: Ab isko successfully wo fake key mil jayegi aur error nahi aayega
     - name: Build Release APK with Fake (Debug) Key
-      run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$HOME/.android/debug.keystore -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=androiddebugkey -Pandroid.injected.signing.key.password=android
+      # 2. YAHAN END ME '-x lint' HAI taaki memory bach sake
+      run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$HOME/.android/debug.keystore -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=androiddebugkey -Pandroid.injected.signing.key.password=android -x lint
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release-fake-signed
-        path: app/build/outputs/apk/release/*.apk 
+        # 3. Path update kiya h taaki kisi bhi folder me apk bane wo utha le
+        path: app/build/outputs/apk/**/*.apk 
         if-no-files-found: error
         retention-days: 20
-        
