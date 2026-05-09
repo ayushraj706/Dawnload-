@@ -22,15 +22,21 @@ jobs:
 
     - uses: gradle/actions/setup-gradle@v3
 
+    # NAYA STEP: Ye step pehle ek dummy/fake key banayega server par
+    - name: Generate Fake Keystore
+      run: |
+        mkdir -p ~/.android
+        keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Android Debug"
+
+    # BUILD STEP: Ab isko successfully wo fake key mil jayegi aur error nahi aayega
     - name: Build Release APK with Fake (Debug) Key
-      # Ye command app ko Release mode me banayegi aur Android ke default fake key se sign karegi
       run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$HOME/.android/debug.keystore -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=androiddebugkey -Pandroid.injected.signing.key.password=android
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release-fake-signed
-        # Path me thoda change kiya h taaki koi bhi apk bane wo properly pakad le
         path: app/build/outputs/apk/release/*.apk 
         if-no-files-found: error
         retention-days: 20
+        
