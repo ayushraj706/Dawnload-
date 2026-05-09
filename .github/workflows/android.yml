@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
 
@@ -23,22 +22,15 @@ jobs:
 
     - uses: gradle/actions/setup-gradle@v3
 
-    - run: gradle assembleRelease
-
-    - name: Sign app APK
-      id: sign_app
-      uses: ilharp/sign-android-release@nightly
-      with:
-        releaseDir: app/build/outputs/apk/release
-        signingKey: ${{ secrets.SIGNING_KEY }}
-        keyAlias: ${{ secrets.ALIAS }}
-        keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-        keyPassword: ${{ secrets.KEY_PASSWORD }}
+    - name: Build Release APK with Fake (Debug) Key
+      # Ye command app ko Release mode me banayegi aur Android ke default fake key se sign karegi
+      run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$HOME/.android/debug.keystore -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=androiddebugkey -Pandroid.injected.signing.key.password=android
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: signed-apks
-        path: app/build/outputs/apk/release/*-arm64-v8a-release-signed.apk
+        name: app-release-fake-signed
+        # Path me thoda change kiya h taaki koi bhi apk bane wo properly pakad le
+        path: app/build/outputs/apk/release/*.apk 
         if-no-files-found: error
         retention-days: 20
